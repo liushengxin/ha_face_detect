@@ -25,6 +25,7 @@ CONF_ACCESS_TOKEN = 'access_token'
 CONF_GROUP_LIST = 'group_list'
 CONF_DELETE_TIME = 'delete_time'
 
+
 OPTIONS = dict(age=["baidu_age", "年龄", "mdi:account", "岁"],
                beauty=["baidu_beauty", "颜值", "mdi:face-woman-shimmer", "分"],
                emotion=["baidu_emotion", "情绪", "mdi:emoticon-excited-outline", None],
@@ -238,7 +239,15 @@ class FaceDetectdata(object):
             with open(savepath, 'wb') as fp:
                 fp.write(content)
                 fp.close()
-                
+#####
+    def save_picture(self, content, age, emotion, beauty, gender):
+        savepath = self._save_path + str(age) + "-" + str(emotion) + "-" + str(beauty) + "-" + str(gender) + '.jpg'
+        if not os.path.exists(savepath):
+            with open(savepath, 'wb') as fp:
+                fp.write(content)
+                fp.close()
+
+  
     def removefile(self):
         path = self._save_path #需要清空的文件夹
         files = list(os.walk(path)) #获得所有文件夹的信息列表
@@ -277,7 +286,51 @@ class FaceDetectdata(object):
         res2 = self._client.multiSearch(image, imageType, self._grouplist, options)
 
         return res1,img_data,res2
-    
+
+    def baidu_vehicleDetect(self):
+        self._client = AipFace(self._appid, self._apikey, self._secretkey)
+        img_data = self.get_picture()
+        data = base64.b64encode(img_data)
+        image = data.decode()
+        imageType = "BASE64"
+        self._client.detect(image, imageType)
+        #人脸检测
+        options = {}
+        options["face_field"] = "beauty,age,faceshape,expression,emotion,gender,glasses"
+        options["max_face_num"] = 1
+        options["face_type"] = "LIVE"
+        res1 = self._client.detect(image, imageType, options)
+        #人脸搜索
+        options = {}
+        options["max_face_num"] = 1
+        options["match_threshold"] = 70
+        options["quality_control"] = "NORMAL"
+        options["liveness_control"] = "LOW"
+        options["max_user_num"] = 1
+        res2 = self._client.multiSearch(image, imageType, self._grouplist, options)
+
+        return res1,img_data,res2
+
+        """ 读取图片 """
+        def get_file_content(filePath):
+            with open(filePath, 'rb') as fp:
+                return fp.read()
+        
+        image = get_file_content('example.jpg')
+        
+        """ 调用车辆检测 """
+        client.vehicleDetect(image)
+        
+        """ 如果有可选参数 """
+        options = {}
+        options["show"] = "false"
+        options["area"] = "x1,y1,x2,y2,x3,y3...xn,yn"
+        
+        """ 带参数调用车辆检测 """
+        client.vehicleDetect(image, options)
+
+
+      
     @Throttle(TIME_BETWEEN_UPDATES)
     def update(self):
         try:
